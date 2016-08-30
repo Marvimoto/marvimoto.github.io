@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Heatmap</title>
+    <link rel="stylesheet" href="css/leaflet.css" />
+    <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/MarkerCluster.css' rel='stylesheet' />
+    <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/MarkerCluster.Default.css' rel='stylesheet' />
+
+    <script src="js/leaflet.js"></script>
+    <script src="js/jquery-3.0.0.min.js"></script>
+    <script src="js/heatlayer.js"></script>
+    <script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/leaflet.markercluster.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<div id="map"></div>
+<style>
+    #map { height: 98vh; }
+</style>
+<script>
+    var start;
+    var mymap = L.map('map').setView([50, 10], 7);
+    L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+        attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+        maxZoom: 18,
+        id: 'marvimoto.0hcm1gi7',
+        accessToken: 'pk.eyJ1IjoibWFydmltb3RvIiwiYSI6ImNpcHM1bnpnZTAwMTNodW0ycDc1cm5idDMifQ.AY9BP_AH0jplhx94YQ1ePA'
+    }).addTo(mymap);
+
+    var json = $.getJSON("rsspart.json", function (json) {
+        console.log("Json geladen");
+        var count = Object.keys(json.response.docs).length;
+        console.log(count);
+        start = Date.now();
+        var heat = L.heatLayer();
+        var markers = [];
+        for (var i=0; i<count; i++) {
+            //Koordinaten auslesen
+            var coord = json.response.docs[i].allLocations[0].split(",");
+            var y = coord[0];
+            var x = coord[1];
+
+            var latlng = L.latLng(x,y);
+
+            //Marker setzen (noch nicht anzeigen)
+            heat.addLatLng(latlng);
+
+        }
+        //Cluster zur Map hinzufügen
+        heat.addTo(mymap);
+        var stop = Date.now();
+        alert((stop-start)/1000 + " Sekunden");
+    });
+
+</script>
+</body>
+</html>

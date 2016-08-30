@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Map 2</title>
+    <link rel="stylesheet" href="css/leaflet.css" />
+    <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/MarkerCluster.css' rel='stylesheet' />
+    <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/MarkerCluster.Default.css' rel='stylesheet' />
+
+    <script src="js/leaflet.js"></script>
+    <script src="js/jquery-3.0.0.min.js"></script>
+    <script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/leaflet.markercluster.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<div id="map"></div>
+<style>
+    #map { height: 98vh; }
+</style>
+<script>
+    var start;
+    var mymap = L.map('map').setView([50, 10], 7);
+    L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+        attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+        maxZoom: 18,
+        id: 'marvimoto.0hcm1gi7',
+        accessToken: 'pk.eyJ1IjoibWFydmltb3RvIiwiYSI6ImNpcHM1bnpnZTAwMTNodW0ycDc1cm5idDMifQ.AY9BP_AH0jplhx94YQ1ePA'
+    }).addTo(mymap);
+    console.log("Json wird geladen");
+
+    var json = $.getJSON("rsspart.json", function (json) {
+        console.log("Json geladen");
+        var count = Object.keys(json.response.docs).length;
+        start = Date.now();
+        var cluster = L.markerClusterGroup();
+        var markers = [];
+        for (var i=0; i<count; i++) {
+            //Koordinaten auslesen
+            var data = json.response.docs[i];
+            if (typeof data.streetLocation != 'undefined'){
+                var coord = data.streetLocation[0].split(",");
+                var x = coord[0];
+                var y = coord[1];
+                var eventIcon = L.Icon.extend({
+                    options: {
+                        iconSize: [32, 32]
+                    }
+                });
+                // Icon festlegen
+                switch(data.eventType[0]) {
+                    case "Behinderungen": var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_roadblock.svg'});
+                        break;
+                    case "Stau": var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_trafficjam.svg'});
+                        break;
+                    case "Schienenersatzverkehr": var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_replacement.svg'});
+                        break;
+                    case "Verzoegerung": var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_delay.svg'});
+                        break;
+                    case "Unfall": var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_accident.svg'});
+                        break;
+                    default: var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_weather.svg'});
+                }
+                var marker = L.marker([x,y], {icon: thisIcon});
+                marker.bindPopup("<b>" + data.title + "</b><br>" + data.text + "<br>" + data.id);
+
+                //Marker clustern
+                cluster.addLayer(marker);
+            }
+            else {
+                //var coord = json.response.docs[i].allLocations[0].split(",");
+            }
+
+
+            //Marker setzen (noch nicht anzeigen)
+
+
+        }
+        //Cluster zur Map hinzufügen
+        mymap.addLayer(cluster);
+        var stop = Date.now();
+        alert((stop-start)/1000 + " Sekunden");
+    });
+
+</script>
+</body>
+</html>

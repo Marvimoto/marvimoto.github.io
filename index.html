@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="js/d3.min.js" charset="utf-8"></script>
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js" charset="UTF-8"></script>
+    <script src="js/bootstrap.min.js" charset="utf-8"></script>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+    <meta charset="UTF-8">
+    <title>Visualisierung</title>
+    <style>
+        @font-face
+        {
+            font-family: 'Helvetica Neue';
+            src: url('fonts/helveticaneuelight.ttf')
+        }
+        div .col-lg-6 {
+            text-align: center;
+        }
+        a {
+            display: block;
+            margin: 10px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        p {
+            font-family: "Helvetica Neue";
+            font-weight: 100;
+        }
+
+        .btn {
+
+        }
+    </style>
+</head>
+<body>
+<header style="height: 400px; background-image: url('images/background.PNG'); background-repeat: no-repeat; background-size: cover">
+<div class="container">
+    <div class="row">
+        <div class="col-md-12" style="text-align: center">
+            <h1 style="color: #ffffff; margin-top:120px; margin-bottom: 120px; padding-top: 10px; padding-bottom: 20px; background: rgba(0,0,0,0.4); border-radius:20px">Geographische Visualisierung multimodaler Mobilitätsdaten</h1>
+        </div>
+    </div>
+</div>
+</header>
+<div class="container">
+    <div class="row">
+        <div class="col-lg-3"></div>
+        <div class="col-lg-6">
+            <p style="font-size:24px;">Hier finden Sie eine Auswahl der in der Thesis behandelten technologischen Implementierungen. Klicken Sie einfach auf den entsprechenden Button, um die gewünschte Implementierung zu laden.</p>
+        </div>
+        <div class="col-lg-3"></div>
+    </div>
+
+    <div class="row">
+    <div class="col-lg-3"></div>
+    <div class="col-lg-6">
+        <a class="btn-default btn-lg btn" href="map2complete">Vollständig laden + rendern</a><br>
+        <a class="btn-default btn-lg btn" href="map2sorted">Vollständig sortiert laden + rendern</a>
+        <hr>
+        <a class="btn-default btn-lg btn" href="map2bulks">Prozessiert laden + rendern</a>
+        <a class="btn-default btn-lg btn" href="map2sortedbulks">Prozessiert sortiert laden + rendern</a>
+        <a class="btn-default btn-lg btn" href="map2bulkevents">Prozessiert gefiltert laden + rendern</a>
+    </div>
+    <div class="col-lg-3"></div>
+    </div>
+</div>
+</body>
+</html>
