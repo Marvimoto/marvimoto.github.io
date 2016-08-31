@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use App\Http\Requests;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class GenerateController extends Controller
 {
@@ -222,7 +223,7 @@ class GenerateController extends Controller
             if (in_array(strtolower($value["eventType"][0]), ["wetter", "naturereignis", "behinderungen", "verzoegerung", "stau", "unfall", "schienenersatzverkehr"])) {
                 $newjson["features"][$i]["type"] = "Feature";
                 $newjson["features"][$i]["properties"]["icon"] = strtolower($value["eventType"][0]);
-//            $newjson["features"][$i]["properties"]["description"] = isset($value["title"]) ? "<strong>" . $value["title"] . "</strong><br>" . $value["text"] : $value["text"];
+                $newjson["features"][$i]["properties"]["description"] = isset($value["title"]) ? "<strong>" . wordwrap($value["title"], 75, "<br>") . "</strong><br>" . wordwrap($value["text"], 75, "<br>") : wordwrap($value["text"], 75, "<br>");
                 $newjson["features"][$i]["geometry"]["type"] = "Point";
                 $ucoords = [];
                 $ucoords = explode(",", $value["allLocations"][0]);

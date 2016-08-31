@@ -17,6 +17,12 @@
     </style>
 </div>
 <script>
+
+    String.prototype.trunc = String.prototype.trunc ||
+            function(n){
+                return (this.length > n) ? this.substr(0,n-1)+'&hellip;' : this;
+            };
+
     mapboxgl.accessToken = 'pk.eyJ1IjoibWFydmltb3RvIiwiYSI6ImNpcHM1bnpnZTAwMTNodW0ycDc1cm5idDMifQ.AY9BP_AH0jplhx94YQ1ePA';
     var map = new mapboxgl.Map({
         container: 'map',
@@ -30,32 +36,31 @@
     var loadstart = Date.now();
     console.time('Visualisierung');
     console.timeStamp('Beginn der Visualisierung');
+    var url = 'http://localhost/visualisierung/api/public/json/geojson';
 
     map.on('load', function() {
         map.addSource("markers", {
             type: "geojson",
-            // Point to GeoJSON data. This example visualizes all M1.0+ markers
-            // from 12/22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
-            data: "newmarkers.geojson",
+            // Point to GeoJSON data.
+            data: url,
             cluster: true,
             clusterMaxZoom: 10, // Max zoom to cluster points on
             clusterRadius: 100 // Radius of each cluster when clustering points (defaults to 50)
         });
         // Add a new source from our GeoJSON data and set the
         // 'cluster' option to true.
-        console.time('Visualisierung');
 
         // Use the markers source to create five layers:
         // One for unclustered points, three for each cluster category,
         // and one for cluster labels.
-        setTimeout(map.addLayer({
+        window.setTimeout(map.addLayer({
             "id": "unclustered-points",
             "type": "symbol",
             "source": "markers",
             "layout": {
                 "icon-image":"{icon}"
             }
-        }),5000);
+        }),2000);
 
 
         // Display the earthquake data in three layers, each filtered to a range of
@@ -97,9 +102,52 @@
                 "text-size": 12
             }
         });
-
+console.timeStamp('Ende der Visualisierung');
     });
-    console.timeEnd('Visualisierung');
+
+    map.on('click', function (e) {
+        var features = map.queryRenderedFeatures(e.point, { layers: ['unclustered-points', 'cluster-0', 'cluster-1', 'cluster-2'] });
+
+        if (!features.length) {
+            return;
+        }
+
+        var feature = features[0];
+
+        if (feature.layer.id == 'unclustered-points') {
+            // Populate the popup and set its coordinates
+            // based on the feature found.
+            var popup = new mapboxgl.Popup()
+                    .setLngLat(feature.geometry.coordinates)
+                    .setHTML(feature.properties.description.trunc(500))
+                    .addTo(map);
+        }
+        else {
+            map.flyTo({
+                center: feature.geometry.coordinates,
+                zoom: map.getZoom()+2
+            })
+        };
+    });
+    map.on('mousemove', function (e){
+        var clusters = map.queryRenderedFeatures(e.point, {layers: ['unclustered-points','cluster-0', 'cluster-1', 'cluster-2']});
+        map.getCanvas().style.cursor = (clusters.length) ? 'pointer' : '';
+    });
+
+    map.on("render", function() {
+        var markercount = 0;
+        var points = map.queryRenderedFeatures({layers: ['cluster-0', 'cluster-1', 'cluster-2']});
+        console.log(points);
+        if (points.length != 0){
+
+            for(var i=0; i < points.length; i++){
+                markercount += points[i].properties.point_count;
+            }
+            if (markercount == 19177){
+                alert('Ready');
+            };
+        }
+    });
 
 //    function visualize(path) {
 //        console.profile('Visualisierung');

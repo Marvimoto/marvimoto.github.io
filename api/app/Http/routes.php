@@ -28,6 +28,7 @@ Route::get('generateeventtyp', 'GenerateController@generateeventtyp');
 Route::get('countevents', 'GenerateController@count');
 Route::get('geojson', 'GenerateController@geojson');
 Route::get('news', 'GenerateController@news');
+Route::get('json/geojson', 'JsonController@geojson');
 
 
 Route::get('json/{start}/{stop}', 'JsonController@index');
