@@ -5,22 +5,76 @@
     <title>Map 2</title>
 
     <script src='https://api.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.js'></script>
-    <link href='https://api.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.css' rel='stylesheet' />
+    <link href='https://api.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.css' rel='stylesheet'/>
 
     <script src="js/jquery-3.0.0.min.js"></script>
+    <script src="js/leaflet.js"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 <div id='map'>
     <style>
-        #map { height: 98vh; }
+        #map {
+            height: 98vh;
+        }
     </style>
 </div>
+<nav id='filter-group' class='filter-group'></nav>
+<style>
+    .filter-group {
+        font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+        font-weight: 600;
+        position: absolute;
+        top: 30px;
+        right: 20px;
+        z-index: 1;
+        border-radius: 3px;
+        width: 200px;
+        color: #fff;
+    }
+
+    .filter-group input[type=checkbox]:first-child + label {
+        border-radius: 3px 3px 0 0;
+    }
+
+    .filter-group label:last-child {
+        border-radius: 0 0 3px 3px;
+        border: none;
+    }
+
+    .filter-group input[type=checkbox] {
+        display: none;
+    }
+
+    .filter-group input[type=checkbox] + label {
+        background-color: #3386c0;
+        display: block;
+        cursor: pointer;
+        padding: 10px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+    }
+
+    .filter-group input[type=checkbox] + label {
+        background-color: #3386c0;
+        text-transform: capitalize;
+    }
+
+    .filter-group input[type=checkbox] + label:hover,
+    .filter-group input[type=checkbox]:checked + label {
+        background-color: #4ea0da;
+    }
+
+    .filter-group input[type=checkbox]:checked + label:before {
+        content: '✔';
+        margin-right: 5px;
+    }
+</style>
 <script>
 
     String.prototype.trunc = String.prototype.trunc ||
-            function(n){
-                return (this.length > n) ? this.substr(0,n-1)+'&hellip;' : this;
+            function (n) {
+                return (this.length > n) ? this.substr(0, n - 1) + '&hellip;' : this;
             };
 
     mapboxgl.accessToken = 'pk.eyJ1IjoibWFydmltb3RvIiwiYSI6ImNpcHM1bnpnZTAwMTNodW0ycDc1cm5idDMifQ.AY9BP_AH0jplhx94YQ1ePA';
@@ -31,53 +85,73 @@
         zoom: 6
     });
 
-
+    var filterGroup = document.getElementById('filter-group');
     var firstElementReady = false;
     var loadstart = Date.now();
     console.time('Visualisierung');
     console.timeStamp('Beginn der Visualisierung');
     var url = 'http://localhost/visualisierung/api/public/json/geojson';
-
-    map.on('load', function() {
-        map.addSource("markers", {
-            type: "geojson",
-            // Point to GeoJSON data.
-            data: url,
-            cluster: true,
-            clusterMaxZoom: 10, // Max zoom to cluster points on
-            clusterRadius: 100 // Radius of each cluster when clustering points (defaults to 50)
-        });
-        // Add a new source from our GeoJSON data and set the
-        // 'cluster' option to true.
-
-        // Use the markers source to create five layers:
-        // One for unclustered points, three for each cluster category,
-        // and one for cluster labels.
-        window.setTimeout(map.addLayer({
-            "id": "unclustered-points",
-            "type": "symbol",
-            "source": "markers",
-            "layout": {
-                "icon-image":"{icon}"
-            }
-        }),2000);
-
-
+    var geosource = new mapboxgl.GeoJSONSource({
+        data: url,
+        cluster: true,
+        clusterMaxZoom: 10,
+        clusterRadius: 100
+    });
+    map.on('load', function () {
+        map.addSource("markers", geosource);
         // Display the earthquake data in three layers, each filtered to a range of
         // count values. Each range gets a different fill color.
         var layers = [
-            [150, '#f28cb1'],
-            [20, '#f1f075'],
-            [0, '#51bbd6']
+            [0, '#ff1a1a']
         ];
+        window.setTimeout(function () {
+            var places = $.getJSON(url, function (places) {
+                places.features.forEach(function (feature) {
+                    var symbol = feature.properties['icon'];
+                    var layerID = 'layer-' + symbol;
+                    if (!map.getLayer(layerID)) {
+                        map.addLayer({
+                            "id": layerID,
+                            "type": "symbol",
+                            "source": "markers",
+                            "layout": {
+                                "icon-image": symbol,
+                                "icon-allow-overlap": true
+                            },
+                            "filter": ["==", "icon", symbol]
+                        })
+                        var input = document.createElement('input');
+                        input.type = 'checkbox';
+                        input.id = layerID;
+                        input.checked = true;
+                        filterGroup.appendChild(input);
+
+                        var label = document.createElement('label');
+                        label.setAttribute('for', layerID);
+                        label.textContent = symbol;
+                        filterGroup.appendChild(label);
+
+                        input.addEventListener('change', function (e) {
+                            var newmarkers = L.geoJson(places, {
+                                filter: function (feature, layer) {
+                                    return feature.properties.symbol != input.id;
+                                }
+                            })
+                            console.log(newmarkers.toGeoJSON());
+                            map.getSource('markers').setData(newmarkers.toGeoJSON());
+                        })
+                    }
+                })
+            });
+        }, 2000);
 
         layers.forEach(function (layer, i) {
             map.addLayer({
-                "id": "cluster-" + i,
+                "id": "cluster",
                 "type": "circle",
                 "source": "markers",
                 "paint": {
-                    "circle-color": layer[1],
+                    "circle-color": "#ff1a1a",
                     "circle-radius": 18
                 },
                 "filter": i === 0 ?
@@ -87,6 +161,7 @@
                             ["<", "point_count", layers[i - 1][0]]]
             });
         });
+
 
         // Add a layer for the clusters' count labels
         map.addLayer({
@@ -99,109 +174,123 @@
                     "DIN Offc Pro Medium",
                     "Arial Unicode MS Bold"
                 ],
-                "text-size": 12
+                "text-size": 16
+            },
+            "paint": {
+                "text-color": "#ffffff"
             }
         });
-console.timeStamp('Ende der Visualisierung');
-    });
 
-    map.on('click', function (e) {
-        var features = map.queryRenderedFeatures(e.point, { layers: ['unclustered-points', 'cluster-0', 'cluster-1', 'cluster-2'] });
 
-        if (!features.length) {
-            return;
-        }
+        map.on('click', function (e) {
+            var features = map.queryRenderedFeatures(e.point, {layers: ['unclustered-points', 'cluster']});
 
-        var feature = features[0];
-
-        if (feature.layer.id == 'unclustered-points') {
-            // Populate the popup and set its coordinates
-            // based on the feature found.
-            var popup = new mapboxgl.Popup()
-                    .setLngLat(feature.geometry.coordinates)
-                    .setHTML(feature.properties.description.trunc(500))
-                    .addTo(map);
-        }
-        else {
-            map.flyTo({
-                center: feature.geometry.coordinates,
-                zoom: map.getZoom()+2
-            })
-        };
-    });
-    map.on('mousemove', function (e){
-        var clusters = map.queryRenderedFeatures(e.point, {layers: ['unclustered-points','cluster-0', 'cluster-1', 'cluster-2']});
-        map.getCanvas().style.cursor = (clusters.length) ? 'pointer' : '';
-    });
-
-    map.on("render", function() {
-        var markercount = 0;
-        var points = map.queryRenderedFeatures({layers: ['cluster-0', 'cluster-1', 'cluster-2']});
-        console.log(points);
-        if (points.length != 0){
-
-            for(var i=0; i < points.length; i++){
-                markercount += points[i].properties.point_count;
+            if (!features.length) {
+                return;
             }
-            if (markercount == 19177){
-                alert('Ready');
-            };
-        }
-    });
 
-//    function visualize(path) {
-//        console.profile('Visualisierung');
-//        console.log(Date.now() - loadstart + "ms: Json wird geladen " + path);
-//        var json = $.getJSON(path, function (json) {
-//            var count = Object.keys(json).length;
-//            start = Date.now();
-//            var markers = [];
-//            for (var i=0; i<count; i++) {
-//                //Koordinaten auslesen
-//                var data = json[i];
-//                if (typeof data.allLocations != 'undefined'){
-//                    var coord = data.allLocations[0].split(",");
-//                    var x = coord[0];
-//                    var y = coord[1];
-////                    var eventIcon = L.Icon.extend({
-////                        options: {
-////                            iconSize: [32, 32]
-////                        }
-////                    });
-////                    switch(data.eventType[0]) {
-////                        case "Behinderungen": var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_roadblock.svg'});
-////                            break;
-////                        case "Stau": var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_trafficjam.svg'});
-////                            break;
-////                        case "Schienenersatzverkehr": var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_replacement.svg'});
-////                            break;
-////                        case "Verzoegerung": var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_delay.svg'});
-////                            break;
-////                        case "Unfall": var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_accident.svg'});
-////                            break;
-////                        default: var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_weather.svg'});
-////                    }
-//                    var marker = new mapboxgl.Marker()
-//                            .setLngLat(coord)
-//                            .addTo(map);
-////                    var marker = L.marker([x,y], {icon: thisIcon});
-////                    marker.bindPopup("<b>" + data.title + "</b><br>" + data.text + "<br>");
-////                    marker.addTo(mymap);
-//                    //Marker clustern
-//                }
-//            }
-//            //Cluster zur Map hinzufügen
-//            if (!firstElementReady) {
-//                console.log(Date.now() - loadstart + 'ms: Erster Satz gerendert')
-//                firstElementReady = true;
-//            }
-//            console.log(Date.now() - loadstart + "ms: Json geladen " + path);
-//            var stop = Date.now();
-//            console.timeEnd('Visualisierung');
-//            console.timeStamp('Abschluss der Visualisierung');
-//            console.profileEnd();
-//        });
-//    }
+            var feature = features[0];
+
+            if (feature.layer.id == 'unclustered-points') {
+                // Populate the popup and set its coordinates
+                // based on the feature found.
+                var popup = new mapboxgl.Popup()
+                        .setLngLat(feature.geometry.coordinates)
+                        .setHTML(feature.properties.description.trunc(500))
+                        .addTo(map);
+            }
+            else {
+                map.flyTo({
+                    center: feature.geometry.coordinates,
+                    zoom: map.getZoom() + 2
+                })
+            }
+            ;
+        });
+        map.on('mousemove', function (e) {
+            var clusters = map.queryRenderedFeatures(e.point, {layers: ['unclustered-points', 'cluster']});
+            map.getCanvas().style.cursor = (clusters.length) ? 'pointer' : '';
+        });
+
+        map.on("render", function () {
+            var markers = map.querySourceFeatures('markers', {});
+            for (var i = 0; i < markers.length; i++) {
+                if (typeof(markers[i].properties.cluster) == 'undefined') {
+                    console.log(markers[i]);
+                }
+            }
+            var markercount = 0;
+            var points = map.queryRenderedFeatures({layers: ['cluster']});
+            if (points.length != 0) {
+
+                for (var i = 0; i < points.length; i++) {
+                    markercount += points[i].properties.point_count;
+                }
+                if (markercount == 19267) {
+                    console.timeEnd('Visualisierung');
+                    console.timeStamp('Ende der Visualisierung');
+                    console.log('Fertig');
+//                features.forEach(function(feature){
+//                    console.log(feature);
+//                })
+                }
+                ;
+            }
+        });
+    })
+    //    function visualize(path) {
+    //        console.profile('Visualisierung');
+    //        console.log(Date.now() - loadstart + "ms: Json wird geladen " + path);
+    //        var json = $.getJSON(path, function (json) {
+    //            var count = Object.keys(json).length;
+    //            start = Date.now();
+    //            var markers = [];
+    //            for (var i=0; i<count; i++) {
+    //                //Koordinaten auslesen
+    //                var data = json[i];
+    //                if (typeof data.allLocations != 'undefined'){
+    //                    var coord = data.allLocations[0].split(",");
+    //                    var x = coord[0];
+    //                    var y = coord[1];
+    ////                    var eventIcon = L.Icon.extend({
+    ////                        options: {
+    ////                            iconSize: [32, 32]
+    ////                        }
+    ////                    });
+    ////                    switch(data.eventType[0]) {
+    ////                        case "Behinderungen": var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_roadblock.svg'});
+    ////                            break;
+    ////                        case "Stau": var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_trafficjam.svg'});
+    ////                            break;
+    ////                        case "Schienenersatzverkehr": var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_replacement.svg'});
+    ////                            break;
+    ////                        case "Verzoegerung": var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_delay.svg'});
+    ////                            break;
+    ////                        case "Unfall": var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_accident.svg'});
+    ////                            break;
+    ////                        default: var thisIcon = new eventIcon({iconUrl: 'images/traffic-events/icon_traffic-event_weather.svg'});
+    ////                    }
+    //                    var marker = new mapboxgl.Marker()
+    //                            .setLngLat(coord)
+    //                            .addTo(map);
+    ////                    var marker = L.marker([x,y], {icon: thisIcon});
+    ////                    marker.bindPopup("<b>" + data.title + "</b><br>" + data.text + "<br>");
+    ////                    marker.addTo(mymap);
+    //                    //Marker clustern
+    //                }
+    //            }
+    //            //Cluster zur Map hinzufügen
+    //            if (!firstElementReady) {
+    //                console.log(Date.now() - loadstart + 'ms: Erster Satz gerendert')
+    //                firstElementReady = true;
+    //            }
+    //            console.log(Date.now() - loadstart + "ms: Json geladen " + path);
+    //            var stop = Date.now();
+    //            console.timeEnd('Visualisierung');
+    //            console.timeStamp('Abschluss der Visualisierung');
+    //            console.profileEnd();
+    //        });
+    //    }
 
 </script>
 </body>

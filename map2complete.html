@@ -16,6 +16,10 @@
 <div id="map"></div>
 <style>
     #map { height: 98vh; }
+
+    .mycluster {
+        background-color: #ff1a1a
+    }
 </style>
 <script>
     var start;
@@ -28,6 +32,7 @@
     }).addTo(mymap);
 
     var cluster = L.markerClusterGroup();
+
 
     var firstElementReady = false;
     var loadstart = Date.now();
