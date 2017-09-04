@@ -247,7 +247,7 @@
         var stop = Date.now();
 //        alert((stop-start)/1000 + " Sekunden");
     });
-    var json6 = $.getJSON('visualisierung/api/public/json/bulkevents/6', function (json) {
+    var json6 = $.getJSON('/api/public/json/bulkevents/6', function (json) {
         var count = Object.keys(json).length;
         start = Date.now();
         var markers = [];
@@ -281,7 +281,7 @@
         console.log(bulksrendered);
 //            console.log(Date.now() - loadstart + "ms: Json geladen " + path);
         if (bulksrendered == 6) {
-            console.timeEnd('Visualisierung');
+            console.timeEnd('');
             //alert('Ready!');
         }
         console.timeStamp('Visualisierung abgeschlossen');
